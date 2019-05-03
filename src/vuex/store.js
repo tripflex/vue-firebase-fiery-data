@@ -3,7 +3,9 @@ import Vuex from 'vuex'
 import router from '../router'
 import firebase from '../config/firebase'
 import dbs from '@/config/firestore'
+import FieryVuex, { fieryBindings, fieryActions, fieryMutations, fieryMapMutations, fieryState } from 'fiery-vuex'
 
+Vue.use(FieryVuex)
 Vue.use(Vuex)
 
 const state = {
@@ -11,6 +13,8 @@ const state = {
   routing: false,
   currentUser: {},
   userProfile: {},
+  currentTodo: null,
+  todos: [],
   snackbar: {
     show: false,
     text: ''
@@ -38,10 +42,36 @@ const mutations = {
   },
   HIDE_SNACKBAR (state) {
     state.snackbar.show = false
-  }
+  },
+  SET_TODOS( state, getTodos ){
+    state.todos = getTodos()
+    console.log('TODOS UPDATE!', Object.assign({}, state.todos));
+  },
+  ...fieryMapMutations({
+    // mutation: stateVar
+    'setTodo': 'currentTodo'
+  })
 }
 
 const actions = {
+  ...fieryBindings({
+    // store.dispatch( 'setTodo', todoId )
+    setTodo(context, todoId, $fiery) {
+      return $fiery(dbs.todos.doc(todoId), {}, 'setTodo') // must list mutation here
+    },
+    // store.dispatch( 'loadTodos' )
+    loadTodos(context, payload, $fiery) {
+      return $fiery(dbs.todos, {}, 'SET_TODOS')
+    },
+    // store.dispatch( 'searchTodos', {done: true, limit: 10} )
+    searchTodos(context, { done, limit }, $fiery) {
+      const options = {
+        query: q => q.where('done', '==', done),
+        limit: limit
+      }
+      return $fiery(dbs.todos, options, 'setTodos')
+    }
+  }),
   FIRST_LOAD ({ commit }) {
     commit('SET_FIRST_LOAD')
   },

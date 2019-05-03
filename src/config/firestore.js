@@ -11,6 +11,7 @@ db.settings(settings)
 
 const dbs = {
   users: db.collection('users'),
+  todos: db.collection('todos')
 }
 
 export default dbs
